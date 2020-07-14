@@ -1,0 +1,74 @@
+version: '2'
+services:
+  webadm1:
+    restart: always
+    image: rcdevs/webadm
+    networks:
+      IPVLAN_Eth0:
+        ipv4_address: 192.168.100.20
+      rcdevs-otp:
+    depends_on:
+      - "sql1"
+      - "ldap1"
+    volumes:
+      - "logs-data:/opt/webadm/logs"
+
+  ldap1:
+    restart: always
+    image: rcdevs/slapd
+    networks:
+      rcdevs-otp:
+    volumes:
+      - "ldap1-data:/opt/slapd/data"
+      - "logs-data:/opt/slapd/logs"
+
+  sql1:
+    restart: always
+    image: rcdevs/mariadb
+    networks:
+      IPVLAN_Eth0:
+        ipv4_address: 192.168.100.22
+      rcdevs-otp:
+    environment:
+      MYSQL_ROOT_PASSWORD: webadm
+      MYSQL_DATABASE: webadm
+      MYSQL_USER: webadm
+      MYSQL_PASSWORD: webadm
+    command: --max_connections=10000
+    volumes:
+      - "sql1-data:/var/lib/mysql"
+
+  ldproxy:
+    restart: always
+    image: rcdevs/ldproxy
+    networks:
+      IPVLAN_Eth0:
+        ipv4_address: 192.168.100.23
+      rcdevs-otp:
+    depends_on:
+      - "webadm1"
+    volumes:
+      - "logs-data:/opt/ldproxy/logs"
+
+  radiusd:
+    restart: always
+    image: rcdevs/radiusd
+    networks:
+      IPVLAN_Eth0:
+        ipv4_address: 192.168.100.24
+      rcdevs-otp:
+    depends_on:
+      - "webadm1"
+    volumes:
+      - "logs-data:/opt/radiusd/logs"
+
+volumes:
+  sql1-data:
+    driver: local
+  ldap1-data:
+    driver: local
+  logs-data:
+    driver: local
+
+networks:
+  rcdevs-otp:
