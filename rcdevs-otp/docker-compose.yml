@@ -71,4 +71,6 @@ volumes:
     driver: local
 
 networks:
+  IPVLAN_Eth0:
+    external: true
   rcdevs-otp:
